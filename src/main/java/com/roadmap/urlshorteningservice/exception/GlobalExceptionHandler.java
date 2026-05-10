@@ -23,6 +23,12 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(errors));
     }
 
+    @ExceptionHandler(UrlAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleUrlAlreadyExists(UrlAlreadyExistsException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(List.of(ex.getMessage())));
+    }
+
     public record ErrorResponse(List<String> errors) {
     }
 }
