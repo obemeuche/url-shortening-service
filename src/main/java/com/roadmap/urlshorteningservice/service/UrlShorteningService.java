@@ -36,6 +36,20 @@ public class UrlShorteningService {
         return toResponse(saved);
     }
 
+    @Transactional
+    public Response updateShortUrl(String shortCode, Request request) {
+        UrlMapping mapping = repository.findByShortCode(shortCode)
+                .orElseThrow(() -> new ShortUrlNotFoundException(shortCode));
+
+        String newUrl = request.getUrl();
+        if (!newUrl.equals(mapping.getUrl()) && repository.existsByUrl(newUrl)) {
+            throw new UrlAlreadyExistsException(newUrl);
+        }
+
+        mapping.setUrl(newUrl);
+        return toResponse(repository.save(mapping));
+    }
+
     @Transactional(readOnly = true)
     public Response getByShortCode(String shortCode) {
         UrlMapping mapping = repository.findByShortCode(shortCode)

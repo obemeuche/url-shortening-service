@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,5 +31,11 @@ public class UrlShorteningController {
     @GetMapping("/{shortCode}")
     public ResponseEntity<Response> retrieve(@PathVariable String shortCode) {
         return ResponseEntity.ok(service.getByShortCode(shortCode));
+    }
+
+    @PutMapping("/{shortCode}")
+    public ResponseEntity<Response> update(@PathVariable String shortCode,
+                                           @Valid @RequestBody Request request) {
+        return ResponseEntity.ok(service.updateShortUrl(shortCode, request));
     }
 }
