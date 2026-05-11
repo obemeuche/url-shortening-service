@@ -1,6 +1,7 @@
 package com.roadmap.urlshorteningservice.service;
 
 import com.roadmap.urlshorteningservice.entity.UrlMapping;
+import com.roadmap.urlshorteningservice.exception.ShortUrlNotFoundException;
 import com.roadmap.urlshorteningservice.exception.UrlAlreadyExistsException;
 import com.roadmap.urlshorteningservice.model.Request;
 import com.roadmap.urlshorteningservice.model.Response;
@@ -33,6 +34,13 @@ public class UrlShorteningService {
         UrlMapping saved = repository.save(mapping);
 
         return toResponse(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public Response getByShortCode(String shortCode) {
+        UrlMapping mapping = repository.findByShortCode(shortCode)
+                .orElseThrow(() -> new ShortUrlNotFoundException(shortCode));
+        return toResponse(mapping);
     }
 
     private String generateUniqueShortCode() {

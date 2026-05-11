@@ -2,6 +2,7 @@ package com.roadmap.urlshorteningservice.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.roadmap.urlshorteningservice.exception.GlobalExceptionHandler;
+import com.roadmap.urlshorteningservice.exception.ShortUrlNotFoundException;
 import com.roadmap.urlshorteningservice.exception.UrlAlreadyExistsException;
 import com.roadmap.urlshorteningservice.model.Response;
 import com.roadmap.urlshorteningservice.service.UrlShorteningService;
@@ -19,6 +20,7 @@ import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -99,5 +101,35 @@ class UrlShorteningControllerTest {
                         .content(objectMapper.writeValueAsString(Map.of("url", "https://www.example.com/long/url"))))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.errors[0]").value("A short code already exists for: https://www.example.com/long/url"));
+    }
+
+    @Test
+    void retrieve_existingShortCode_returns200WithBody() throws Exception {
+        Response response = Response.builder()
+                .id("1")
+                .url("https://www.example.com/long/url")
+                .shortCode("abc123")
+                .createdAt(LocalDateTime.of(2026, 1, 1, 12, 0))
+                .updatedAt(LocalDateTime.of(2026, 1, 1, 12, 0))
+                .build();
+        when(service.getByShortCode("abc123")).thenReturn(response);
+
+        mockMvc.perform(get("/shorten/abc123"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("1"))
+                .andExpect(jsonPath("$.url").value("https://www.example.com/long/url"))
+                .andExpect(jsonPath("$.shortCode").value("abc123"))
+                .andExpect(jsonPath("$.createdAt").isNotEmpty())
+                .andExpect(jsonPath("$.updatedAt").isNotEmpty());
+    }
+
+    @Test
+    void retrieve_unknownShortCode_returns404() throws Exception {
+        when(service.getByShortCode("unknown"))
+                .thenThrow(new ShortUrlNotFoundException("unknown"));
+
+        mockMvc.perform(get("/shorten/unknown"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errors[0]").value("No URL found for short code: unknown"));
     }
 }

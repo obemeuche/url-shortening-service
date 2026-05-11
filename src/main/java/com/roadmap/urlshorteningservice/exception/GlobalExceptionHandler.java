@@ -29,6 +29,12 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(List.of(ex.getMessage())));
     }
 
+    @ExceptionHandler(ShortUrlNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleShortUrlNotFound(ShortUrlNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(List.of(ex.getMessage())));
+    }
+
     public record ErrorResponse(List<String> errors) {
     }
 }

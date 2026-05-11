@@ -1,6 +1,7 @@
 package com.roadmap.urlshorteningservice.service;
 
 import com.roadmap.urlshorteningservice.entity.UrlMapping;
+import com.roadmap.urlshorteningservice.exception.ShortUrlNotFoundException;
 import com.roadmap.urlshorteningservice.exception.UrlAlreadyExistsException;
 import com.roadmap.urlshorteningservice.model.Request;
 import com.roadmap.urlshorteningservice.model.Response;
@@ -99,6 +100,34 @@ class UrlShorteningServiceTest {
 
         assertThat(response.getShortCode()).isEqualTo("free22");
         verify(shortCodeGenerator, times(2)).generate();
+    }
+
+    @Test
+    void getByShortCode_returnsResponse() {
+        UrlMapping mapping = UrlMapping.builder()
+                .id(1L)
+                .url("https://www.example.com/long/url")
+                .shortCode("abc123")
+                .accessCount(0L)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+        when(repository.findByShortCode("abc123")).thenReturn(java.util.Optional.of(mapping));
+
+        Response response = service.getByShortCode("abc123");
+
+        assertThat(response.getId()).isEqualTo("1");
+        assertThat(response.getUrl()).isEqualTo("https://www.example.com/long/url");
+        assertThat(response.getShortCode()).isEqualTo("abc123");
+    }
+
+    @Test
+    void getByShortCode_throwsWhenNotFound() {
+        when(repository.findByShortCode("unknown")).thenReturn(java.util.Optional.empty());
+
+        assertThatThrownBy(() -> service.getByShortCode("unknown"))
+                .isInstanceOf(ShortUrlNotFoundException.class)
+                .hasMessageContaining("unknown");
     }
 
     // Request has no public setter — use reflection to set url in tests
