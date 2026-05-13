@@ -19,9 +19,11 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -131,5 +133,69 @@ class UrlShorteningControllerTest {
         mockMvc.perform(get("/shorten/unknown"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.errors[0]").value("No URL found for short code: unknown"));
+    }
+
+    @Test
+    void update_validRequest_returns200WithBody() throws Exception {
+        Response response = Response.builder()
+                .id("1")
+                .url("https://www.example.com/updated-url")
+                .shortCode("abc123")
+                .createdAt(LocalDateTime.of(2026, 1, 1, 12, 0))
+                .updatedAt(LocalDateTime.of(2026, 1, 1, 12, 30))
+                .build();
+        when(service.updateShortUrl(eq("abc123"), any())).thenReturn(response);
+
+        mockMvc.perform(put("/shorten/abc123")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("url", "https://www.example.com/updated-url"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("1"))
+                .andExpect(jsonPath("$.url").value("https://www.example.com/updated-url"))
+                .andExpect(jsonPath("$.shortCode").value("abc123"))
+                .andExpect(jsonPath("$.createdAt").isNotEmpty())
+                .andExpect(jsonPath("$.updatedAt").isNotEmpty());
+    }
+
+    @Test
+    void update_unknownShortCode_returns404() throws Exception {
+        when(service.updateShortUrl(eq("unknown"), any()))
+                .thenThrow(new ShortUrlNotFoundException("unknown"));
+
+        mockMvc.perform(put("/shorten/unknown")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("url", "https://www.example.com/updated-url"))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errors[0]").value("No URL found for short code: unknown"));
+    }
+
+    @Test
+    void update_blankUrl_returns400() throws Exception {
+        mockMvc.perform(put("/shorten/abc123")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("url", ""))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0]").value("url: url must not be blank"));
+    }
+
+    @Test
+    void update_invalidUrl_returns400() throws Exception {
+        mockMvc.perform(put("/shorten/abc123")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("url", "not-a-url"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0]").value("url: url must be a valid URL"));
+    }
+
+    @Test
+    void update_urlAlreadyTaken_returns409() throws Exception {
+        when(service.updateShortUrl(eq("abc123"), any()))
+                .thenThrow(new UrlAlreadyExistsException("https://www.example.com/taken-url"));
+
+        mockMvc.perform(put("/shorten/abc123")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("url", "https://www.example.com/taken-url"))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.errors[0]").value("A short code already exists for: https://www.example.com/taken-url"));
     }
 }
