@@ -130,6 +130,102 @@ class UrlShorteningServiceTest {
                 .hasMessageContaining("unknown");
     }
 
+    @Test
+    void updateShortUrl_updatesUrlAndReturnsResponse() {
+        Request request = new Request();
+        setUrl(request, "https://www.example.com/updated-url");
+
+        UrlMapping existing = UrlMapping.builder()
+                .id(1L)
+                .url("https://www.example.com/original-url")
+                .shortCode("abc123")
+                .accessCount(0L)
+                .createdAt(LocalDateTime.of(2026, 1, 1, 12, 0))
+                .updatedAt(LocalDateTime.of(2026, 1, 1, 12, 0))
+                .build();
+        when(repository.findByShortCode("abc123")).thenReturn(java.util.Optional.of(existing));
+        when(repository.existsByUrl("https://www.example.com/updated-url")).thenReturn(false);
+
+        UrlMapping updated = UrlMapping.builder()
+                .id(1L)
+                .url("https://www.example.com/updated-url")
+                .shortCode("abc123")
+                .accessCount(0L)
+                .createdAt(LocalDateTime.of(2026, 1, 1, 12, 0))
+                .updatedAt(LocalDateTime.of(2026, 1, 1, 12, 30))
+                .build();
+        when(repository.save(existing)).thenReturn(updated);
+
+        Response response = service.updateShortUrl("abc123", request);
+
+        assertThat(response.getId()).isEqualTo("1");
+        assertThat(response.getUrl()).isEqualTo("https://www.example.com/updated-url");
+        assertThat(response.getShortCode()).isEqualTo("abc123");
+        assertThat(response.getCreatedAt()).isEqualTo(LocalDateTime.of(2026, 1, 1, 12, 0));
+        assertThat(response.getUpdatedAt()).isEqualTo(LocalDateTime.of(2026, 1, 1, 12, 30));
+        verify(repository).save(existing);
+    }
+
+    @Test
+    void updateShortUrl_throwsWhenShortCodeNotFound() {
+        Request request = new Request();
+        setUrl(request, "https://www.example.com/updated-url");
+
+        when(repository.findByShortCode("unknown")).thenReturn(java.util.Optional.empty());
+
+        assertThatThrownBy(() -> service.updateShortUrl("unknown", request))
+                .isInstanceOf(ShortUrlNotFoundException.class)
+                .hasMessageContaining("unknown");
+
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void updateShortUrl_throwsWhenNewUrlAlreadyTakenByDifferentRecord() {
+        Request request = new Request();
+        setUrl(request, "https://www.example.com/taken-url");
+
+        UrlMapping existing = UrlMapping.builder()
+                .id(1L)
+                .url("https://www.example.com/original-url")
+                .shortCode("abc123")
+                .accessCount(0L)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+        when(repository.findByShortCode("abc123")).thenReturn(java.util.Optional.of(existing));
+        when(repository.existsByUrl("https://www.example.com/taken-url")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.updateShortUrl("abc123", request))
+                .isInstanceOf(UrlAlreadyExistsException.class)
+                .hasMessageContaining("https://www.example.com/taken-url");
+
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void updateShortUrl_allowsUpdatingToSameUrl() {
+        Request request = new Request();
+        setUrl(request, "https://www.example.com/same-url");
+
+        UrlMapping existing = UrlMapping.builder()
+                .id(1L)
+                .url("https://www.example.com/same-url")
+                .shortCode("abc123")
+                .accessCount(0L)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+        when(repository.findByShortCode("abc123")).thenReturn(java.util.Optional.of(existing));
+        when(repository.save(existing)).thenReturn(existing);
+
+        Response response = service.updateShortUrl("abc123", request);
+
+        assertThat(response.getUrl()).isEqualTo("https://www.example.com/same-url");
+        verify(repository, never()).existsByUrl(any());
+        verify(repository).save(existing);
+    }
+
     // Request has no public setter — use reflection to set url in tests
     private void setUrl(Request request, String url) {
         try {
