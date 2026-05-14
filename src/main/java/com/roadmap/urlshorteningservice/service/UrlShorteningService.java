@@ -57,6 +57,13 @@ public class UrlShorteningService {
         return toResponse(mapping);
     }
 
+    @Transactional
+    public void deleteByShortCode(String shortCode) {
+        UrlMapping mapping = repository.findByShortCode(shortCode)
+                .orElseThrow(() -> new ShortUrlNotFoundException(shortCode));
+        repository.delete(mapping);
+    }
+
     private String generateUniqueShortCode() {
         String code;
         do {
