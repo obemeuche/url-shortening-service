@@ -50,8 +50,16 @@ public class UrlShorteningService {
         return toResponse(repository.save(mapping));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Response getByShortCode(String shortCode) {
+        UrlMapping mapping = repository.findByShortCode(shortCode)
+                .orElseThrow(() -> new ShortUrlNotFoundException(shortCode));
+        mapping.setAccessCount(mapping.getAccessCount() + 1);
+        return toResponse(repository.save(mapping));
+    }
+
+    @Transactional(readOnly = true)
+    public Response getStats(String shortCode) {
         UrlMapping mapping = repository.findByShortCode(shortCode)
                 .orElseThrow(() -> new ShortUrlNotFoundException(shortCode));
         return toResponse(mapping);
@@ -79,6 +87,7 @@ public class UrlShorteningService {
                 .shortCode(mapping.getShortCode())
                 .createdAt(mapping.getCreatedAt())
                 .updatedAt(mapping.getUpdatedAt())
+                .accessCount(mapping.getAccessCount())
                 .build();
     }
 }

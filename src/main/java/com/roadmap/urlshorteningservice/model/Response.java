@@ -8,11 +8,12 @@ import java.time.LocalDateTime;
 
 @Getter
 @Builder
-@JsonPropertyOrder({"id", "url", "shortCode", "createdAt", "updatedAt"})
+@JsonPropertyOrder({"id", "url", "shortCode", "createdAt", "updatedAt", "accessCount"})
 public class Response {
     private String id;
     private String url;
     private String shortCode;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long accessCount;
 }
