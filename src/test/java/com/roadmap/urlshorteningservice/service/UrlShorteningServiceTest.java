@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -112,7 +113,7 @@ class UrlShorteningServiceTest {
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
-        when(repository.findByShortCode("abc123")).thenReturn(java.util.Optional.of(mapping));
+        when(repository.findByShortCode("abc123")).thenReturn(Optional.of(mapping));
 
         Response response = service.getByShortCode("abc123");
 
@@ -123,7 +124,7 @@ class UrlShorteningServiceTest {
 
     @Test
     void getByShortCode_throwsWhenNotFound() {
-        when(repository.findByShortCode("unknown")).thenReturn(java.util.Optional.empty());
+        when(repository.findByShortCode("unknown")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.getByShortCode("unknown"))
                 .isInstanceOf(ShortUrlNotFoundException.class)
@@ -143,7 +144,7 @@ class UrlShorteningServiceTest {
                 .createdAt(LocalDateTime.of(2026, 1, 1, 12, 0))
                 .updatedAt(LocalDateTime.of(2026, 1, 1, 12, 0))
                 .build();
-        when(repository.findByShortCode("abc123")).thenReturn(java.util.Optional.of(existing));
+        when(repository.findByShortCode("abc123")).thenReturn(Optional.of(existing));
         when(repository.existsByUrl("https://www.example.com/updated-url")).thenReturn(false);
 
         UrlMapping updated = UrlMapping.builder()
@@ -171,7 +172,7 @@ class UrlShorteningServiceTest {
         Request request = new Request();
         setUrl(request, "https://www.example.com/updated-url");
 
-        when(repository.findByShortCode("unknown")).thenReturn(java.util.Optional.empty());
+        when(repository.findByShortCode("unknown")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.updateShortUrl("unknown", request))
                 .isInstanceOf(ShortUrlNotFoundException.class)
@@ -193,7 +194,7 @@ class UrlShorteningServiceTest {
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
-        when(repository.findByShortCode("abc123")).thenReturn(java.util.Optional.of(existing));
+        when(repository.findByShortCode("abc123")).thenReturn(Optional.of(existing));
         when(repository.existsByUrl("https://www.example.com/taken-url")).thenReturn(true);
 
         assertThatThrownBy(() -> service.updateShortUrl("abc123", request))
@@ -216,7 +217,7 @@ class UrlShorteningServiceTest {
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
-        when(repository.findByShortCode("abc123")).thenReturn(java.util.Optional.of(existing));
+        when(repository.findByShortCode("abc123")).thenReturn(Optional.of(existing));
         when(repository.save(existing)).thenReturn(existing);
 
         Response response = service.updateShortUrl("abc123", request);
@@ -236,7 +237,7 @@ class UrlShorteningServiceTest {
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
-        when(repository.findByShortCode("abc123")).thenReturn(java.util.Optional.of(existing));
+        when(repository.findByShortCode("abc123")).thenReturn(Optional.of(existing));
 
         service.deleteByShortCode("abc123");
 
@@ -245,7 +246,7 @@ class UrlShorteningServiceTest {
 
     @Test
     void deleteByShortCode_throwsWhenShortCodeNotFound() {
-        when(repository.findByShortCode("unknown")).thenReturn(java.util.Optional.empty());
+        when(repository.findByShortCode("unknown")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.deleteByShortCode("unknown"))
                 .isInstanceOf(ShortUrlNotFoundException.class)
