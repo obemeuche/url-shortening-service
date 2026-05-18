@@ -20,7 +20,9 @@ import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -197,5 +199,22 @@ class UrlShorteningControllerTest {
                         .content(objectMapper.writeValueAsString(Map.of("url", "https://www.example.com/taken-url"))))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.errors[0]").value("A short code already exists for: https://www.example.com/taken-url"));
+    }
+
+    @Test
+    void delete_existingShortCode_returns204() throws Exception {
+        mockMvc.perform(delete("/shorten/abc123"))
+                .andExpect(status().isNoContent())
+                .andExpect(jsonPath("$").doesNotExist());
+    }
+
+    @Test
+    void delete_unknownShortCode_returns404() throws Exception {
+        doThrow(new ShortUrlNotFoundException("unknown"))
+                .when(service).deleteByShortCode("unknown");
+
+        mockMvc.perform(delete("/shorten/unknown"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errors[0]").value("No URL found for short code: unknown"));
     }
 }
