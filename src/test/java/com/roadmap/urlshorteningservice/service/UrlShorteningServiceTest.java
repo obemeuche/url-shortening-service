@@ -226,6 +226,34 @@ class UrlShorteningServiceTest {
         verify(repository).save(existing);
     }
 
+    @Test
+    void deleteByShortCode_deletesSuccessfully() {
+        UrlMapping existing = UrlMapping.builder()
+                .id(1L)
+                .url("https://www.example.com/to-be-deleted")
+                .shortCode("abc123")
+                .accessCount(0L)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+        when(repository.findByShortCode("abc123")).thenReturn(java.util.Optional.of(existing));
+
+        service.deleteByShortCode("abc123");
+
+        verify(repository).delete(existing);
+    }
+
+    @Test
+    void deleteByShortCode_throwsWhenShortCodeNotFound() {
+        when(repository.findByShortCode("unknown")).thenReturn(java.util.Optional.empty());
+
+        assertThatThrownBy(() -> service.deleteByShortCode("unknown"))
+                .isInstanceOf(ShortUrlNotFoundException.class)
+                .hasMessageContaining("unknown");
+
+        verify(repository, never()).delete(any());
+    }
+
     // Request has no public setter — use reflection to set url in tests
     private void setUrl(Request request, String url) {
         try {
