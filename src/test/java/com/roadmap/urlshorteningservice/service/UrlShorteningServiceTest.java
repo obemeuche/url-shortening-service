@@ -121,6 +121,7 @@ class UrlShorteningServiceTest {
         assertThat(response.getId()).isEqualTo("1");
         assertThat(response.getUrl()).isEqualTo("https://www.example.com/long/url");
         assertThat(response.getShortCode()).isEqualTo("abc123");
+        verify(repository, never()).save(any());
     }
 
     @Test

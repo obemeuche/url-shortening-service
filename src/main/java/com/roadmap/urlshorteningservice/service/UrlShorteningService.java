@@ -56,7 +56,7 @@ public class UrlShorteningService {
         UrlMapping mapping = repository.findByShortCode(shortCode)
                 .orElseThrow(() -> new ShortUrlNotFoundException(shortCode));
         mapping.setAccessCount(mapping.getAccessCount() + 1);
-        return toResponse(repository.save(mapping));
+        return toResponse(mapping);
     }
 
     @Transactional(readOnly = true)
