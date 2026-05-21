@@ -5,6 +5,7 @@ import com.roadmap.urlshorteningservice.exception.ShortUrlNotFoundException;
 import com.roadmap.urlshorteningservice.exception.UrlAlreadyExistsException;
 import com.roadmap.urlshorteningservice.model.Request;
 import com.roadmap.urlshorteningservice.model.Response;
+import com.roadmap.urlshorteningservice.model.StatsResponse;
 import com.roadmap.urlshorteningservice.repository.UrlMappingRepository;
 import com.roadmap.urlshorteningservice.util.ShortCodeGenerator;
 import lombok.RequiredArgsConstructor;
@@ -59,10 +60,10 @@ public class UrlShorteningService {
     }
 
     @Transactional(readOnly = true)
-    public Response getStats(String shortCode) {
+    public StatsResponse getStats(String shortCode) {
         UrlMapping mapping = repository.findByShortCode(shortCode)
                 .orElseThrow(() -> new ShortUrlNotFoundException(shortCode));
-        return toResponse(mapping);
+        return toStatsResponse(mapping);
     }
 
     @Transactional
@@ -82,6 +83,16 @@ public class UrlShorteningService {
 
     private Response toResponse(UrlMapping mapping) {
         return Response.builder()
+                .id(String.valueOf(mapping.getId()))
+                .url(mapping.getUrl())
+                .shortCode(mapping.getShortCode())
+                .createdAt(mapping.getCreatedAt())
+                .updatedAt(mapping.getUpdatedAt())
+                .build();
+    }
+
+    private StatsResponse toStatsResponse(UrlMapping mapping) {
+        return StatsResponse.builder()
                 .id(String.valueOf(mapping.getId()))
                 .url(mapping.getUrl())
                 .shortCode(mapping.getShortCode())

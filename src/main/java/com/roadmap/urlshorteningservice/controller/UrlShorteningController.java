@@ -2,6 +2,7 @@ package com.roadmap.urlshorteningservice.controller;
 
 import com.roadmap.urlshorteningservice.model.Request;
 import com.roadmap.urlshorteningservice.model.Response;
+import com.roadmap.urlshorteningservice.model.StatsResponse;
 import com.roadmap.urlshorteningservice.service.UrlShorteningService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +42,7 @@ public class UrlShorteningController {
     }
 
     @GetMapping("/{shortCode}/stats")
-    public ResponseEntity<Response> stats(@PathVariable String shortCode) {
+    public ResponseEntity<StatsResponse> stats(@PathVariable String shortCode) {
         return ResponseEntity.ok(service.getStats(shortCode));
     }
 
