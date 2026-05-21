@@ -5,6 +5,7 @@ import com.roadmap.urlshorteningservice.exception.GlobalExceptionHandler;
 import com.roadmap.urlshorteningservice.exception.ShortUrlNotFoundException;
 import com.roadmap.urlshorteningservice.exception.UrlAlreadyExistsException;
 import com.roadmap.urlshorteningservice.model.Response;
+import com.roadmap.urlshorteningservice.model.StatsResponse;
 import com.roadmap.urlshorteningservice.service.UrlShorteningService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -124,7 +125,8 @@ class UrlShorteningControllerTest {
                 .andExpect(jsonPath("$.url").value("https://www.example.com/long/url"))
                 .andExpect(jsonPath("$.shortCode").value("abc123"))
                 .andExpect(jsonPath("$.createdAt").isNotEmpty())
-                .andExpect(jsonPath("$.updatedAt").isNotEmpty());
+                .andExpect(jsonPath("$.updatedAt").isNotEmpty())
+                .andExpect(jsonPath("$.accessCount").doesNotExist());
     }
 
     @Test
@@ -199,6 +201,36 @@ class UrlShorteningControllerTest {
                         .content(objectMapper.writeValueAsString(Map.of("url", "https://www.example.com/taken-url"))))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.errors[0]").value("A short code already exists for: https://www.example.com/taken-url"));
+    }
+
+    @Test
+    void stats_existingShortCode_returns200WithAccessCount() throws Exception {
+        StatsResponse response = StatsResponse.builder()
+                .id("1")
+                .url("https://www.example.com/long/url")
+                .shortCode("abc123")
+                .createdAt(LocalDateTime.of(2026, 1, 1, 12, 0))
+                .updatedAt(LocalDateTime.of(2026, 1, 1, 12, 0))
+                .accessCount(5L)
+                .build();
+        when(service.getStats("abc123")).thenReturn(response);
+
+        mockMvc.perform(get("/shorten/abc123/stats"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("1"))
+                .andExpect(jsonPath("$.url").value("https://www.example.com/long/url"))
+                .andExpect(jsonPath("$.shortCode").value("abc123"))
+                .andExpect(jsonPath("$.accessCount").value(5));
+    }
+
+    @Test
+    void stats_unknownShortCode_returns404() throws Exception {
+        when(service.getStats("unknown"))
+                .thenThrow(new ShortUrlNotFoundException("unknown"));
+
+        mockMvc.perform(get("/shorten/unknown/stats"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errors[0]").value("No URL found for short code: unknown"));
     }
 
     @Test

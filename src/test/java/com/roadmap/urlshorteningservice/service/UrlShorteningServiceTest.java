@@ -5,6 +5,7 @@ import com.roadmap.urlshorteningservice.exception.ShortUrlNotFoundException;
 import com.roadmap.urlshorteningservice.exception.UrlAlreadyExistsException;
 import com.roadmap.urlshorteningservice.model.Request;
 import com.roadmap.urlshorteningservice.model.Response;
+import com.roadmap.urlshorteningservice.model.StatsResponse;
 import com.roadmap.urlshorteningservice.repository.UrlMappingRepository;
 import com.roadmap.urlshorteningservice.util.ShortCodeGenerator;
 import org.junit.jupiter.api.Test;
@@ -225,6 +226,36 @@ class UrlShorteningServiceTest {
         assertThat(response.getUrl()).isEqualTo("https://www.example.com/same-url");
         verify(repository, never()).existsByUrl(any());
         verify(repository).save(existing);
+    }
+
+    @Test
+    void getStats_returnsStatsResponseWithAccessCount() {
+        UrlMapping mapping = UrlMapping.builder()
+                .id(1L)
+                .url("https://www.example.com/long/url")
+                .shortCode("abc123")
+                .accessCount(7L)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+        when(repository.findByShortCode("abc123")).thenReturn(Optional.of(mapping));
+
+        StatsResponse response = service.getStats("abc123");
+
+        assertThat(response.getId()).isEqualTo("1");
+        assertThat(response.getUrl()).isEqualTo("https://www.example.com/long/url");
+        assertThat(response.getShortCode()).isEqualTo("abc123");
+        assertThat(response.getAccessCount()).isEqualTo(7L);
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void getStats_throwsWhenNotFound() {
+        when(repository.findByShortCode("unknown")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.getStats("unknown"))
+                .isInstanceOf(ShortUrlNotFoundException.class)
+                .hasMessageContaining("unknown");
     }
 
     @Test
