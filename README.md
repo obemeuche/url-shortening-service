@@ -2,6 +2,8 @@
 
 A REST API for creating and managing shortened URLs, built with Spring Boot 4 and PostgreSQL.
 
+Project roadmap.sh url: https://roadmap.sh/projects/url-shortening-service
+
 ## Table of Contents
 
 - [Tech Stack](#tech-stack)
